@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-display: "Clash Display", var(--font-body);
+  --font-body: "Space Grotesk", -apple-system, sans-serif;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  @apply bg-base-950 text-ink-100 font-body antialiased;
+}
+
+/* Thin, unobtrusive scrollbars for the horizontal pill rails */
+.pill-rail::-webkit-scrollbar {
+  height: 0px;
+}
+
+/* Keyboard focus is always visible — never removed, only restyled */
+:focus-visible {
+  outline: 2px solid theme("colors.accent.DEFAULT");
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
