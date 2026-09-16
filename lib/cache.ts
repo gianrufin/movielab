@@ -17,7 +17,11 @@ const DEFAULT_TTL_SECONDS = 60 * 60 * 12; // 12h — ratings/reviews don't shift
 
 export async function cacheGet<T>(key: string): Promise<T | null> {
   if (redis) {
-    return (await redis.get<T>(key)) ?? null;
+    try {
+      return (await redis.get<T>(key)) ?? null;
+    } catch (err) {
+      console.warn("[cache] redis get failed, falling back to memory:", err);
+    }
   }
   const entry = memoryStore.get(key);
   if (!entry || entry.expiresAt < Date.now()) {
@@ -33,8 +37,12 @@ export async function cacheSet<T>(
   ttlSeconds = DEFAULT_TTL_SECONDS
 ): Promise<void> {
   if (redis) {
-    await redis.set(key, value, { ex: ttlSeconds });
-    return;
+    try {
+      await redis.set(key, value, { ex: ttlSeconds });
+      return;
+    } catch (err) {
+      console.warn("[cache] redis set failed, falling back to memory:", err);
+    }
   }
   memoryStore.set(key, { value, expiresAt: Date.now() + ttlSeconds * 1000 });
 }

@@ -1,3 +1,4 @@
+import { ExternalLink } from "lucide-react";
 import { MovieRatings } from "@/lib/types";
 
 function RatingCard({
@@ -7,6 +8,7 @@ function RatingCard({
   subscore,
   votes,
   url,
+  available,
 }: {
   label: string;
   accentColor: string;
@@ -14,26 +16,47 @@ function RatingCard({
   subscore?: string;
   votes: string | null;
   url: string;
+  available: boolean;
 }) {
   const Card = (
-    <div className="flex flex-col gap-1.5 rounded-card border border-base-700 bg-base-900 px-4 py-4 h-full">
+    <div className="group relative flex flex-col gap-1.5 rounded-card border border-base-700 bg-base-900 px-4 py-4 h-full transition-all duration-200 hover:border-base-600 hover:bg-base-850">
+      <div className="flex items-center justify-between">
+        <span
+          className="text-[11px] font-medium tracking-wide text-ink-500"
+          style={{ color: accentColor }}
+        >
+          {label}
+        </span>
+        {url && (
+          <ExternalLink
+            size={12}
+            className="text-ink-600 group-hover:text-ink-300 transition-colors"
+          />
+        )}
+      </div>
       <span
-        className="text-[11px] font-medium tracking-wide text-ink-500"
-        style={{ color: accentColor }}
+        className={`font-display text-2xl font-semibold leading-none ${
+          available ? "text-ink-100" : "text-ink-500"
+        }`}
       >
-        {label}
-      </span>
-      <span className="font-display text-2xl font-semibold text-ink-100 leading-none">
         {score}
       </span>
-      {subscore && <span className="text-xs text-ink-500 leading-none mt-0.5">{subscore}</span>}
+      {subscore && <span className="text-xs text-ink-400 leading-none mt-0.5">{subscore}</span>}
       {votes && <span className="text-xs text-ink-500 mt-1">{votes}</span>}
+      {!available && !votes && (
+        <span className="text-[11px] text-ink-600 mt-1">Click to view source</span>
+      )}
     </div>
   );
 
   if (!url) return Card;
   return (
-    <a href={url} target="_blank" rel="noopener noreferrer" className="block h-full">
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="block h-full focus:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-card"
+    >
       {Card}
     </a>
   );
@@ -48,6 +71,7 @@ export function RatingGrid({ ratings }: { ratings: MovieRatings }) {
         score={ratings.imdb.displayScore}
         votes={ratings.imdb.voteCount}
         url={ratings.imdb.url}
+        available={ratings.imdb.available}
       />
       <RatingCard
         label="Rotten Tomatoes"
@@ -60,6 +84,7 @@ export function RatingGrid({ ratings }: { ratings: MovieRatings }) {
         }
         votes={ratings.rottenTomatoes.voteCount}
         url={ratings.rottenTomatoes.url}
+        available={ratings.rottenTomatoes.available}
       />
       <RatingCard
         label="Letterboxd"
@@ -67,7 +92,9 @@ export function RatingGrid({ ratings }: { ratings: MovieRatings }) {
         score={ratings.letterboxd.displayScore}
         votes={ratings.letterboxd.voteCount}
         url={ratings.letterboxd.url}
+        available={ratings.letterboxd.available}
       />
     </div>
   );
 }
+

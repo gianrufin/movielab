@@ -4,36 +4,19 @@ import { Logo } from "@/components/Logo";
 import { HeroPoster } from "@/components/HeroPoster";
 import { RatingGrid } from "@/components/RatingGrid";
 import { ConsensusCard } from "@/components/ConsensusCard";
-import { MovieDetail } from "@/lib/types";
+import { getMovieDetail } from "@/lib/movie";
 
-function getBaseUrl() {
-  if (process.env.NEXT_PUBLIC_BASE_URL) {
-    return process.env.NEXT_PUBLIC_BASE_URL;
-  }
-
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`;
-  }
-
-  return "http://localhost:3000";
-}
-
-async function fetchMovie(id: string): Promise<MovieDetail | null> {
-  const res = await fetch(`${getBaseUrl()}/api/movie/${id}`, {
-    next: { revalidate: 3600 },
-  });
-  if (!res.ok) return null;
-  return res.json();
-}
+export const dynamic = "force-dynamic";
 
 export default async function MovieDetailPage({ params }: { params: { id: string } }) {
-  const movie = await fetchMovie(params.id);
+  const tmdbId = parseInt(params.id, 10);
+  const movie = Number.isNaN(tmdbId) ? null : await getMovieDetail(tmdbId);
 
   if (!movie) {
     return (
       <main className="min-h-screen flex flex-col items-center justify-center gap-3 px-5 text-center">
         <p className="text-ink-300">Couldn&apos;t load this title.</p>
-        <Link href="/" className="text-sm text-accent">
+        <Link href="/" className="text-sm text-accent hover:underline">
           Back to search
         </Link>
       </main>
@@ -44,13 +27,13 @@ export default async function MovieDetailPage({ params }: { params: { id: string
     <main className="min-h-screen pb-16">
       <header className="flex items-center justify-between px-5 py-5">
         <Link href="/" aria-label="Back to search">
-          <ArrowLeft size={20} className="text-ink-300" strokeWidth={1.75} />
+          <ArrowLeft size={20} className="text-ink-300 hover:text-ink-100 transition-colors" strokeWidth={1.75} />
         </Link>
         <Logo />
-        <span className="w-5" />
+        <span className="w-5" /> {/* balances the back arrow for a centered logo */}
       </header>
 
-      <div className="px-5 flex flex-col gap-6">
+      <div className="px-5 flex flex-col gap-6 max-w-2xl mx-auto">
         <HeroPoster
           posterUrl={movie.posterUrl}
           backdropUrl={movie.backdropUrl}

@@ -24,14 +24,31 @@ export async function getImdbAndRTRatings(imdbId: string): Promise<{
   rtCritics: RatingSource;
   rtAudience: RatingSource;
 }> {
+  const apiKey = process.env.OMDB_API_KEY?.trim();
+  if (!apiKey) {
+    return { imdb: EMPTY, rtCritics: EMPTY, rtAudience: EMPTY };
+  }
+
   try {
     const res = await fetch(
-      `https://www.omdbapi.com/?i=${imdbId}&apikey=${process.env.OMDB_API_KEY}`,
+      `https://www.omdbapi.com/?i=${encodeURIComponent(imdbId)}&apikey=${encodeURIComponent(apiKey)}`,
       { next: { revalidate: 3600 } }
     );
-    if (!res.ok) throw new Error(`OMDb ${res.status}`);
+
+    if (res.status === 401 || res.status === 403) {
+      console.warn("[omdb] OMDb API key is inactive, pending email confirmation, or unauthorized (401).");
+      return { imdb: EMPTY, rtCritics: EMPTY, rtAudience: EMPTY };
+    }
+
+    if (!res.ok) {
+      console.warn(`[omdb] Request returned HTTP ${res.status}`);
+      return { imdb: EMPTY, rtCritics: EMPTY, rtAudience: EMPTY };
+    }
+
     const data = await res.json();
-    if (data.Response === "False") throw new Error(data.Error ?? "OMDb miss");
+    if (data.Response === "False") {
+      return { imdb: EMPTY, rtCritics: EMPTY, rtAudience: EMPTY };
+    }
 
     const ratings: { Source: string; Value: string }[] = data.Ratings ?? [];
     const rtEntry = ratings.find((r) => r.Source === "Rotten Tomatoes");
@@ -62,8 +79,8 @@ export async function getImdbAndRTRatings(imdbId: string): Promise<{
     const rtAudience: RatingSource = EMPTY;
 
     return { imdb, rtCritics, rtAudience };
-  } catch (err) {
-    console.error("[omdb] fetch failed:", err);
+  } catch (err: any) {
+    console.warn("[omdb] fetch warning:", err.message || err);
     return { imdb: EMPTY, rtCritics: EMPTY, rtAudience: EMPTY };
   }
 }

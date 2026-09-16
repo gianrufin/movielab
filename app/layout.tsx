@@ -17,19 +17,6 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={spaceGrotesk.variable}>
-      <head>
-        {/*
-          Clash Display is distributed by Fontshare, not Google Fonts, so it
-          can't go through next/font/google. Self-host it instead for
-          production (download the woff2 from fontshare.com/fonts/clash-display
-          into /public/fonts and swap this <link> for an @font-face block in
-          globals.css) — the CDN link below is fine for prototyping only.
-        */}
-        <link
-          href="https://api.fontshare.com/v2/css?f[]=clash-display@600,700&display=swap"
-          rel="stylesheet"
-        />
-      </head>
       <body>{children}</body>
     </html>
   );
