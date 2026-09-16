@@ -6,10 +6,20 @@ import { RatingGrid } from "@/components/RatingGrid";
 import { ConsensusCard } from "@/components/ConsensusCard";
 import { MovieDetail } from "@/lib/types";
 
+function getBaseUrl() {
+  if (process.env.NEXT_PUBLIC_BASE_URL) {
+    return process.env.NEXT_PUBLIC_BASE_URL;
+  }
+
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+
+  return "http://localhost:3000";
+}
+
 async function fetchMovie(id: string): Promise<MovieDetail | null> {
-  // Server-side fetch on the same origin — relies on Next's fetch cache
-  // in addition to the app-level Redis cache in the route handler itself.
-  const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/movie/${id}`, {
+  const res = await fetch(`${getBaseUrl()}/api/movie/${id}`, {
     next: { revalidate: 3600 },
   });
   if (!res.ok) return null;
@@ -37,7 +47,7 @@ export default async function MovieDetailPage({ params }: { params: { id: string
           <ArrowLeft size={20} className="text-ink-300" strokeWidth={1.75} />
         </Link>
         <Logo />
-        <span className="w-5" /> {/* balances the back arrow for a centered logo */}
+        <span className="w-5" />
       </header>
 
       <div className="px-5 flex flex-col gap-6">
