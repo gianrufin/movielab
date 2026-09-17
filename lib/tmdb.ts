@@ -1,4 +1,4 @@
-import { MovieSummary } from "./types";
+import { MovieSummary, Consensus } from "./types";
 import { findYouTubeTrailer } from "./scrapers/youtube";
 
 const TMDB_BASE = "https://api.themoviedb.org/3";
@@ -19,11 +19,7 @@ export interface CuratedMovie {
     rtAudience: { score: number; displayScore: string };
     letterboxd: { score: number; displayScore: string; voteCount: string };
   };
-  consensus?: {
-    overall_consensus: string;
-    praises: string[];
-    critiques: string[];
-  };
+  consensus?: Consensus;
 }
 
 export const CURATED_MOVIES: CuratedMovie[] = [
@@ -45,7 +41,11 @@ export const CURATED_MOVIES: CuratedMovie[] = [
     },
     consensus: {
       overall_consensus:
-        "A mind-bending heist triumph that balances visionary subconscious architecture with grounded emotional stakes.",
+        "A mind-bending heist thriller that balances visionary subconscious action with high emotional stakes.",
+      loved_summary:
+        "Most audiences loved the brilliant dream-within-a-dream concept, Hans Zimmer's iconic score, and the intense zero-gravity action scenes.",
+      disliked_summary:
+        "What most audiences disliked was the heavy dialogue explaining the dream rules in the first act and how complex the plot can get.",
       praises: [
         "Christopher Nolan's audacious original concept and direction",
         "Hans Zimmer's iconic, pulse-pounding brass score",
@@ -75,7 +75,11 @@ export const CURATED_MOVIES: CuratedMovie[] = [
     },
     consensus: {
       overall_consensus:
-        "The undisputed gold standard of modern superhero cinema, elevated by Heath Ledger's electrifying, Oscar-winning Joker.",
+        "Widely considered the gold standard of modern superhero cinema, elevated by Heath Ledger's Oscar-winning performance.",
+      loved_summary:
+        "Most audiences loved Heath Ledger's unforgettable Joker, the intense realism, and the gripping moral dilemmas throughout.",
+      disliked_summary:
+        "What most audiences disliked was Batman's harsh gravelly voice and a third act packed with several overlapping climaxes.",
       praises: [
         "Heath Ledger's chaotic and unforgettable tour-de-force performance",
         "Moral complexity and high-stakes philosophical clashes",
@@ -105,7 +109,11 @@ export const CURATED_MOVIES: CuratedMovie[] = [
     },
     consensus: {
       overall_consensus:
-        "A monumental sci-fi epic featuring thunderous scale, peerless world-building, and an operatic descent into fanaticism.",
+        "A monumental sci-fi epic featuring massive scale, breathtaking visuals, and an operatic descent into fanaticism.",
+      loved_summary:
+        "Most audiences loved the incredible sand-worm riding sequences, the jaw-dropping desert visuals, and Timothée Chalamet's intense transformation.",
+      disliked_summary:
+        "What most audiences disliked was changes made from the original novel and a final battle that felt slightly rushed.",
       praises: [
         "Denis Villeneuve's peerless scale and Greig Fraser's cinematography",
         "Timothée Chalamet's gripping transition into a messianic warlord",
@@ -135,7 +143,11 @@ export const CURATED_MOVIES: CuratedMovie[] = [
     },
     consensus: {
       overall_consensus:
-        "An emotionally resonant, surprisingly poignant farewell to Marvel's beloved misfits driven by Rocket's tragic backstory.",
+        "An emotional farewell to Marvel's beloved misfits driven by Rocket's heartfelt backstory and great character payoffs.",
+      loved_summary:
+        "Most audiences loved Rocket Raccoon's touching origin story, the fun humor, and the creative hallway fight scene.",
+      disliked_summary:
+        "What most audiences disliked was the darker animal-testing scenes that were tough to watch and an underused Adam Warlock.",
       praises: [
         "Genuinely moving emotional arc for Rocket Raccoon",
         "Inventive single-take hallway action sequence",
@@ -165,7 +177,11 @@ export const CURATED_MOVIES: CuratedMovie[] = [
     },
     consensus: {
       overall_consensus:
-        "A propulsive biographical masterpiece anchored by Cillian Murphy's haunting eyes and Ludwig Göransson's ticking score.",
+        "A gripping biographical drama about the father of the atomic bomb, powered by intense performances and pulse-pounding tension.",
+      loved_summary:
+        "Most audiences loved Cillian Murphy's haunting performance, the breathtaking Trinity bomb test, and Ludwig Göransson's incredible music.",
+      disliked_summary:
+        "What most audiences disliked was the lengthy 3-hour runtime and the dialogue-heavy courtroom scenes in the final hour.",
       praises: [
         "Magnificent performances from Cillian Murphy and Robert Downey Jr.",
         "Unforgettable tension in the Trinity test sequence",
@@ -195,7 +211,11 @@ export const CURATED_MOVIES: CuratedMovie[] = [
     },
     consensus: {
       overall_consensus:
-        "An awe-inspiring sci-fi journey that bridges quantum astrophysics with a deeply emotional father-daughter bond.",
+        "An awe-inspiring sci-fi epic that connects massive space exploration with a deeply moving father-daughter bond.",
+      loved_summary:
+        "Most audiences loved the breathtaking visuals of black holes and giant waves, Hans Zimmer's powerful organ score, and the emotional payoff.",
+      disliked_summary:
+        "What most audiences disliked was the loud sound mix drowning out dialogue and the sentimental love-transcends-dimensions twist.",
       praises: [
         "Hans Zimmer's transcendent pipe-organ score",
         "Visually jaw-dropping depictions of Gargantua and wormholes",
@@ -225,7 +245,11 @@ export const CURATED_MOVIES: CuratedMovie[] = [
     },
     consensus: {
       overall_consensus:
-        "A razor-sharp social satire and pitch-black thriller that seamlessly shifts tones with peerless directorial control.",
+        "A masterclass in dark comedy and tension that shifts from hilarious satire to shocking suspense effortlessly.",
+      loved_summary:
+        "Most audiences loved the brilliant unexpected plot twists, the sharp humor about social classes, and the flawless directing by Bong Joon-ho.",
+      disliked_summary:
+        "What most audiences disliked was the violent and unsettling climax which can be jarring for unprepared viewers.",
       praises: [
         "Bong Joon-ho's flawless genre transitions and pacing",
         "Incisive, multi-layered critique of modern class divide",

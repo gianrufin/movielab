@@ -26,6 +26,8 @@ export interface ReviewSnippet {
 
 export interface Consensus {
   overall_consensus: string;
+  loved_summary?: string;
+  disliked_summary?: string;
   praises: string[];
   critiques: string[];
 }

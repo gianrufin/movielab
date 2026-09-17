@@ -22,20 +22,24 @@ function getAnthropicClient(): Anthropic | null {
   return anthropicClient;
 }
 
-const SYSTEM_PROMPT = `You are MovieLab's audience consensus summarizer.
+const SYSTEM_PROMPT = `You are MovieLab's audience review summarizer.
 
-You will receive real audience/critic review snippets for a film. Synthesize them into a neutral, factual read of what audiences and critics actually think.
+Create a simple, conversational, and direct summary of common audience reviews for a movie.
+Avoid overly academic film critique vocabulary, complex jargon, or flowery language. Write in plain, everyday language that any moviegoer can instantly understand.
 
-Output rules:
+Rules:
 - Respond with ONLY valid JSON without markdown wrapping.
-- Plain sentence-case text throughout. No emojis or bullet symbols.
-- "overall_consensus": exactly 2-3 sentences describing general viewer sentiment.
-- "praises": exactly 2 strings, each a concise clause describing recurring praise.
-- "critiques": exactly 2 strings, each a concise clause describing reservations or critiques.
+- "overall_consensus": 1-2 simple sentences providing a clear general overview of how audiences feel about the movie.
+- "loved_summary": A clear, direct summary of what most people loved, starting with or phrased like: "Most audiences loved [key strengths and highlights]..."
+- "disliked_summary": A clear, direct summary of what people disliked or complained about, starting with or phrased like: "What most audiences disliked was [common criticisms and gripes]..."
+- "praises": exactly 2 or 3 short, simple bullet phrases of what people loved.
+- "critiques": exactly 2 or 3 short, simple bullet phrases of common complaints.
 
 JSON shape:
 {
   "overall_consensus": string,
+  "loved_summary": string,
+  "disliked_summary": string,
   "praises": [string, string],
   "critiques": [string, string]
 }`;
@@ -122,29 +126,33 @@ function generateDeterministicConsensus(
     const firstReview = reviews[0].text.replace(/\.$/, "");
     const secondReview = reviews[1].text.replace(/\.$/, "");
     return {
-      overall_consensus: `Audiences and reviewers highlight ${movieTitle} for its commanding presentation and memorable themes. Community feedback commends the distinct creative voice and performances throughout.`,
+      overall_consensus: `Audiences generally react positively to ${movieTitle}, praising its strong emotional resonance and memorable moments while noting some slower stretches.`,
+      loved_summary: `Most audiences loved the powerful performances, the creative direction, and how engaging the story remains.`,
+      disliked_summary: `What most audiences disliked was the slower pacing in certain sections and select scenes that divide viewers.`,
       praises: [
-        firstReview.length < 90 ? firstReview : firstReview.slice(0, 85) + "...",
-        secondReview.length < 90 ? secondReview : secondReview.slice(0, 85) + "...",
+        firstReview.length < 85 ? firstReview : firstReview.slice(0, 80) + "...",
+        secondReview.length < 85 ? secondReview : secondReview.slice(0, 80) + "...",
       ],
       critiques: [
-        "Select pacing choices and stylistic intensity divide some viewers",
-        "Narrative density requires active audience investment",
+        "Select pacing choices feel slow for some viewers",
+        "Certain storylines or stylistic choices divide opinions",
       ],
     };
   }
 
   return {
     overall_consensus: overview
-      ? `Audiences praise ${movieTitle} for its poignant execution. ${overview.slice(0, 140)}...`
-      : `Audiences appreciate ${movieTitle} for its focused direction and strong ensemble work.`,
+      ? `Audiences appreciate ${movieTitle} for its storytelling and direction. ${overview.slice(0, 120)}...`
+      : `Audiences appreciate ${movieTitle} for its solid directing and strong ensemble performances.`,
+    loved_summary: `Most audiences loved the compelling lead acting and the striking visual atmosphere.`,
+    disliked_summary: `What most audiences disliked was the deliberate pace and a story that takes time to unfold.`,
     praises: [
-      "Compelling lead performances and strong directorial vision",
-      "Impactful thematic focus and visual design",
+      "Compelling lead performances and strong directing",
+      "Impactful themes and memorable presentation",
     ],
     critiques: [
-      "Certain narrative beats move at a deliberate pace",
-      "Specific tonal shifts resonate differently across audiences",
+      "Pacing can feel slow for some viewers",
+      "Tone and intensity may not appeal to everyone",
     ],
   };
 }
