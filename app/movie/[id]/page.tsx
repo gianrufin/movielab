@@ -1,9 +1,8 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { Logo } from "@/components/Logo";
-import { HeroPoster } from "@/components/HeroPoster";
-import { RatingGrid } from "@/components/RatingGrid";
-import { ConsensusCard } from "@/components/ConsensusCard";
+import { MovieDetailAnimatedContent } from "@/components/MovieDetailAnimatedContent";
+import { PWAInstallButton } from "@/components/PWAInstallButton";
 import { getMovieDetail } from "@/lib/movie";
 
 export const dynamic = "force-dynamic";
@@ -30,28 +29,10 @@ export default async function MovieDetailPage({ params }: { params: { id: string
           <ArrowLeft size={20} className="text-ink-300 hover:text-ink-100 transition-colors" strokeWidth={1.75} />
         </Link>
         <Logo />
-        <span className="w-5" /> {/* balances the back arrow for a centered logo */}
+        <PWAInstallButton />
       </header>
 
-      <div className="px-5 flex flex-col gap-6 max-w-2xl mx-auto">
-        <HeroPoster
-          posterUrl={movie.posterUrl}
-          backdropUrl={movie.backdropUrl}
-          trailerYouTubeId={movie.trailerYouTubeId}
-          title={movie.title}
-        />
-
-        <div className="flex flex-col gap-1.5">
-          <h1 className="font-display text-2xl font-semibold text-ink-100">{movie.title}</h1>
-          <p className="text-sm text-ink-500">{movie.year}</p>
-        </div>
-
-        <RatingGrid ratings={movie.ratings} />
-
-        <p className="text-sm leading-relaxed text-ink-300">{movie.overview}</p>
-
-        <ConsensusCard consensus={movie.consensus} />
-      </div>
+      <MovieDetailAnimatedContent movie={movie} />
     </main>
   );
 }

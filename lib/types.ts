@@ -32,14 +32,38 @@ export interface Consensus {
   critiques: string[];
 }
 
+export interface WatchProvider {
+  id: number;
+  name: string;
+  logoUrl: string | null;
+}
+
+export interface WatchProviders {
+  stream: WatchProvider[];
+  buy: WatchProvider[];
+  rent: WatchProvider[];
+  link?: string;
+}
+
+export interface CastMember {
+  id: number;
+  name: string;
+  character: string;
+  profileUrl: string | null;
+}
+
 export interface MovieDetail {
   id: number;
   title: string;
   year: string;
+  runtime?: string | null;
   overview: string;
+  genres?: string[];
+  cast?: CastMember[];
   posterUrl: string | null;
   backdropUrl: string | null;
   trailerYouTubeId: string | null;
   ratings: MovieRatings;
   consensus: Consensus | null;
+  watchProviders?: WatchProviders | null;
 }

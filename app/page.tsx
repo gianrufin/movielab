@@ -1,14 +1,16 @@
 import { Logo } from "@/components/Logo";
 import { SearchBar } from "@/components/SearchBar";
+import { PWAInstallButton } from "@/components/PWAInstallButton";
 
 export default function LandingPage() {
   return (
     <main className="min-h-screen flex flex-col">
       <header className="flex items-center justify-between px-5 py-5">
         <Logo />
+        <PWAInstallButton />
       </header>
 
-      <section className="flex-1 flex flex-col items-center justify-center gap-8 px-5 -mt-16">
+      <section className="flex-1 flex flex-col items-center pt-16 sm:pt-24 md:pt-28 gap-8 px-5">
         <div className="flex flex-col items-center gap-3 text-center">
           <h1 className="font-display text-4xl font-semibold tracking-tight text-ink-100">
             Every rating.

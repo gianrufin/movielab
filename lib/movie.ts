@@ -138,11 +138,15 @@ async function buildMovieDetail(tmdbId: number): Promise<MovieDetail> {
     id: meta.id,
     title: meta.title,
     year: meta.year,
+    runtime: meta.runtime ?? curated?.runtime ?? null,
     overview: meta.overview,
+    genres: meta.genres ?? curated?.genres ?? [],
+    cast: (meta.cast && meta.cast.length > 0) ? meta.cast : (curated?.cast ?? []),
     posterUrl: meta.posterUrl,
     backdropUrl: meta.backdropUrl,
     trailerYouTubeId,
     ratings,
     consensus,
+    watchProviders: meta.watchProviders ?? curated?.watchProviders ?? null,
   };
 }
