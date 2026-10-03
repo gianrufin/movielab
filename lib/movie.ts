@@ -1,6 +1,7 @@
 import { getMovieMetadata, CURATED_MOVIES } from "@/lib/tmdb";
 import { getImdbAndRTRatings } from "@/lib/scrapers/omdb";
 import { getLetterboxdRating } from "@/lib/scrapers/letterboxd";
+import { getRottenTomatoesRatings } from "@/lib/scrapers/rottentomatoes";
 import { findYouTubeTrailer } from "@/lib/scrapers/youtube";
 import { withCache } from "@/lib/cache";
 import { MovieDetail, ReviewSnippet, RatingSource } from "@/lib/types";
@@ -27,88 +28,114 @@ export async function getMovieDetail(tmdbId: number): Promise<MovieDetail | null
 
 async function buildMovieDetail(tmdbId: number): Promise<MovieDetail> {
   const meta = await getMovieMetadata(tmdbId);
-  const curated = CURATED_MOVIES.find((m) => m.id === tmdbId);
+  const curated = CURATED_MOVIES.find(
+    (m) => m.id === tmdbId || (meta.imdbId && m.imdbId === meta.imdbId)
+  );
 
-  // Ratings + reviews are fetched in parallel and each source fails
-  // independently — one blocked scraper never takes the others down.
-  const [omdbResult, letterboxdResult] = await Promise.allSettled([
+  // Ratings + reviews are fetched in parallel across IMDb, Rotten Tomatoes, and Letterboxd
+  // Each source fails independently — one blocked scraper never brings down the others.
+  const [omdbResult, rtResult, letterboxdResult] = await Promise.allSettled([
     meta.imdbId ? getImdbAndRTRatings(meta.imdbId) : Promise.resolve(null),
+    getRottenTomatoesRatings(meta.title, meta.year),
     getLetterboxdRating(meta.title, meta.year, meta.imdbId),
   ]);
 
   const omdb = omdbResult.status === "fulfilled" ? omdbResult.value : null;
+  const rtScraped = rtResult.status === "fulfilled" ? rtResult.value : null;
   const letterboxd =
     letterboxdResult.status === "fulfilled"
       ? letterboxdResult.value
       : { rating: fallbackRating(), reviews: [] as ReviewSnippet[] };
 
-  // If live OMDb/Letterboxd scores were empty but we have high-quality curated data for this title,
-  // use curated scores so the UI displays the full experience even before user sets up OMDb keys!
-  const hasOmdb = omdb && (omdb.imdb.available || omdb.rtCritics.available);
-  const hasLetterboxd = letterboxd.rating.available;
+  const defaultImdbUrl = meta.imdbId ? `https://www.imdb.com/title/${meta.imdbId}/` : "";
+  const defaultRtUrl = `https://www.rottentomatoes.com/search?search=${encodeURIComponent(meta.title)}`;
+  const defaultLbUrl = `https://letterboxd.com/search/${encodeURIComponent(meta.title)}/`;
+
+  // 1. IMDb Rating Resolution (Live OMDb / Cinemeta -> Curated -> Fallback)
+  let imdbRating: RatingSource;
+  if (omdb?.imdb.available) {
+    imdbRating = omdb.imdb;
+  } else if (curated?.ratings?.imdb) {
+    imdbRating = {
+      available: true,
+      score: curated.ratings.imdb.score,
+      displayScore: curated.ratings.imdb.displayScore,
+      voteCount: curated.ratings.imdb.voteCount,
+      url: defaultImdbUrl,
+    };
+  } else {
+    imdbRating = {
+      ...fallbackRating(),
+      url: defaultImdbUrl,
+    };
+  }
+
+  // 2. Rotten Tomatoes Critic Score (Live Scrape -> Curated -> OMDb -> Fallback)
+  let rtCriticRating: RatingSource;
+  if (rtScraped?.critics.available) {
+    rtCriticRating = rtScraped.critics;
+  } else if (curated?.ratings?.rtCritics) {
+    rtCriticRating = {
+      available: true,
+      score: curated.ratings.rtCritics.score,
+      displayScore: curated.ratings.rtCritics.displayScore,
+      voteCount: "Critic Score",
+      url: rtScraped?.critics.url || defaultRtUrl,
+    };
+  } else if (omdb?.rtCritics.available) {
+    rtCriticRating = omdb.rtCritics;
+  } else {
+    rtCriticRating = {
+      ...fallbackRating(),
+      url: rtScraped?.critics.url || defaultRtUrl,
+    };
+  }
+
+  // 3. Rotten Tomatoes Audience Score / Popcornmeter (Live Scrape -> Curated -> Fallback)
+  let rtAudienceRating: RatingSource;
+  if (rtScraped?.audience.available) {
+    rtAudienceRating = rtScraped.audience;
+  } else if (curated?.ratings?.rtAudience) {
+    rtAudienceRating = {
+      available: true,
+      score: curated.ratings.rtAudience.score,
+      displayScore: curated.ratings.rtAudience.displayScore,
+      voteCount: "Audience Score",
+      url: rtScraped?.audience.url || defaultRtUrl,
+    };
+  } else {
+    rtAudienceRating = {
+      ...fallbackRating(),
+      url: rtScraped?.audience.url || defaultRtUrl,
+    };
+  }
+
+  // 4. Letterboxd Rating (Live Scrape -> Curated -> Fallback)
+  let lbRating: RatingSource;
+  if (letterboxd.rating.available) {
+    lbRating = letterboxd.rating;
+  } else if (curated?.ratings?.letterboxd) {
+    lbRating = {
+      available: true,
+      score: curated.ratings.letterboxd.score,
+      displayScore: curated.ratings.letterboxd.displayScore,
+      voteCount: curated.ratings.letterboxd.voteCount,
+      url: defaultLbUrl,
+    };
+  } else {
+    lbRating = {
+      ...fallbackRating(),
+      url: defaultLbUrl,
+    };
+  }
 
   const ratings = {
-    imdb: hasOmdb && omdb.imdb.available
-      ? omdb.imdb
-      : curated?.ratings
-      ? {
-          available: true,
-          score: curated.ratings.imdb.score,
-          displayScore: curated.ratings.imdb.displayScore,
-          voteCount: curated.ratings.imdb.voteCount,
-          url: meta.imdbId ? `https://www.imdb.com/title/${meta.imdbId}/` : "",
-        }
-      : meta.imdbId
-      ? {
-          available: false,
-          score: null,
-          displayScore: "—",
-          voteCount: null,
-          url: `https://www.imdb.com/title/${meta.imdbId}/`,
-        }
-      : fallbackRating(),
+    imdb: imdbRating,
     rottenTomatoes: {
-      ...(hasOmdb && omdb.rtCritics.available
-        ? omdb.rtCritics
-        : curated?.ratings
-        ? {
-            available: true,
-            score: curated.ratings.rtCritics.score,
-            displayScore: curated.ratings.rtCritics.displayScore,
-            voteCount: null,
-            url: `https://www.rottentomatoes.com/search?search=${encodeURIComponent(meta.title)}`,
-          }
-        : {
-            ...fallbackRating(),
-            url: `https://www.rottentomatoes.com/search?search=${encodeURIComponent(meta.title)}`,
-          }),
-      audienceScore:
-        omdb?.rtAudience.available
-          ? omdb.rtAudience
-          : curated?.ratings
-          ? {
-              available: true,
-              score: curated.ratings.rtAudience.score,
-              displayScore: curated.ratings.rtAudience.displayScore,
-              voteCount: null,
-              url: `https://www.rottentomatoes.com/search?search=${encodeURIComponent(meta.title)}`,
-            }
-          : fallbackRating(),
+      ...rtCriticRating,
+      audienceScore: rtAudienceRating,
     },
-    letterboxd: hasLetterboxd
-      ? letterboxd.rating
-      : curated?.ratings
-      ? {
-          available: true,
-          score: curated.ratings.letterboxd.score,
-          displayScore: curated.ratings.letterboxd.displayScore,
-          voteCount: curated.ratings.letterboxd.voteCount,
-          url: `https://letterboxd.com/search/${encodeURIComponent(meta.title)}/`,
-        }
-      : {
-          ...fallbackRating(),
-          url: `https://letterboxd.com/search/${encodeURIComponent(meta.title)}/`,
-        },
+    letterboxd: lbRating,
   };
 
   const reviewCorpus: ReviewSnippet[] = [...letterboxd.reviews];

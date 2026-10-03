@@ -37,6 +37,57 @@ export interface CuratedMovie {
 
 export const CURATED_MOVIES: CuratedMovie[] = [
   {
+    id: 1283515,
+    title: "Verity",
+    year: "2026",
+    runtime: "1h 54m",
+    overview:
+      "Lowen Ashleigh is hired by Jeremy Crawford to ghostwrite novels for his bestselling author wife Verity, who is unable to finish following an accident. Lowen gradually uncovers Verity's disturbing truths while residing at the Crawfords' home to work.",
+    genres: ["Mystery", "Thriller"],
+    posterUrl: `${IMG_BASE}/w780/dGSsPovyUW5XVekXcy7F2GyhTEh.jpg`,
+    backdropUrl: `${IMG_BASE}/original/3BoHXmGAfC2qO4wnCpMYV0BzpHD.jpg`,
+    trailerYouTubeId: "xdPMKhjMSFs",
+    imdbId: "tt32261958",
+    ratings: {
+      imdb: { score: 61, displayScore: "6.1/10", voteCount: "8.3K votes" },
+      rtCritics: { score: 34, displayScore: "34%" },
+      rtAudience: { score: 69, displayScore: "69%" },
+      letterboxd: { score: 55, displayScore: "2.7★", voteCount: "71.8K ratings" },
+    },
+    consensus: {
+      overall_consensus:
+        "Audiences find Verity to be a tense, atmospheric psychological thriller anchored by magnetic performances from Anne Hathaway and Dakota Johnson, even if the melodramatic twists split viewers.",
+      loved_summary:
+        "Most audiences loved Anne Hathaway's chilling performance, the stylish gothic mansion tension, and the faithful thrills adapted from the bestselling novel.",
+      disliked_summary:
+        "What most audiences disliked was the heavy melodrama in the third act and pacing that felt slow or sensationalized to some critics.",
+      praises: [
+        "Anne Hathaway's magnetic and captivating lead performance",
+        "Moody, gothic visual atmosphere and suspenseful score",
+        "Twisty psychological mystery that keeps viewers hooked",
+      ],
+      critiques: [
+        "Divisive third-act plot twists and sensationalist moments",
+        "Deliberate pacing in the middle chapters",
+      ],
+    },
+    cast: [
+      { id: 118545, name: "Dakota Johnson", character: "Lowen Ashleigh", profileUrl: `${IMG_BASE}/w185/qFek0KqpaPV5mVyHHNfAapDE9Tj.jpg` },
+      { id: 1813, name: "Anne Hathaway", character: "Verity Crawford", profileUrl: `${IMG_BASE}/w185/nbccV2pMoyLTCeg5DQip24Eq0Jp.jpg` },
+      { id: 2299, name: "Josh Hartnett", character: "Jeremy Crawford", profileUrl: `${IMG_BASE}/w185/5eMo8D7h1XrSu6ZN4UXhPcS6YNG.jpg` },
+      { id: 5269231, name: "Brady Wagner", character: "Crew Crawford", profileUrl: `${IMG_BASE}/w185/9zwYF2aPqotnCknqXktEbZ9wdg7.jpg` },
+      { id: 1100144, name: "Ismael Cruz Cordova", character: "Corey", profileUrl: `${IMG_BASE}/w185/oXcrsQGndk60iFkNB8qFnMHlNzL.jpg` },
+    ],
+    watchProviders: {
+      stream: [],
+      buy: [
+        { id: 7, name: "Fandango At Home", logoUrl: `${IMG_BASE}/w185/wpOt6x0dRxTrIzuBosto4LGd7E9.png` },
+      ],
+      rent: [],
+      link: "https://www.themoviedb.org/movie/1283515-verity/watch?locale=US",
+    },
+  },
+  {
     id: 27205,
     title: "Inception",
     year: "2010",

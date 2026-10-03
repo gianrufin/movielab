@@ -63,6 +63,49 @@ function RatingCard({
 }
 
 export function RatingGrid({ ratings }: { ratings: MovieRatings }) {
+  const hasAudience = ratings.rottenTomatoes.audienceScore?.available;
+
+  if (hasAudience) {
+    return (
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+        <RatingCard
+          label="IMDb"
+          accentColor="#F5C518"
+          score={ratings.imdb.displayScore}
+          votes={ratings.imdb.voteCount}
+          url={ratings.imdb.url}
+          available={ratings.imdb.available}
+        />
+        <RatingCard
+          label="RT Critics"
+          accentColor="#FA320A"
+          score={ratings.rottenTomatoes.displayScore}
+          subscore="Tomatometer"
+          votes={ratings.rottenTomatoes.voteCount}
+          url={ratings.rottenTomatoes.url}
+          available={ratings.rottenTomatoes.available}
+        />
+        <RatingCard
+          label="RT Audience"
+          accentColor="#FA320A"
+          score={ratings.rottenTomatoes.audienceScore!.displayScore}
+          subscore="Popcornmeter"
+          votes={ratings.rottenTomatoes.audienceScore!.voteCount}
+          url={ratings.rottenTomatoes.audienceScore!.url || ratings.rottenTomatoes.url}
+          available={true}
+        />
+        <RatingCard
+          label="Letterboxd"
+          accentColor="#00E054"
+          score={ratings.letterboxd.displayScore}
+          votes={ratings.letterboxd.voteCount}
+          url={ratings.letterboxd.url}
+          available={ratings.letterboxd.available}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-3 gap-3">
       <RatingCard
@@ -77,11 +120,6 @@ export function RatingGrid({ ratings }: { ratings: MovieRatings }) {
         label="Rotten Tomatoes"
         accentColor="#FA320A"
         score={ratings.rottenTomatoes.displayScore}
-        subscore={
-          ratings.rottenTomatoes.audienceScore?.available
-            ? `Audience ${ratings.rottenTomatoes.audienceScore.displayScore}`
-            : undefined
-        }
         votes={ratings.rottenTomatoes.voteCount}
         url={ratings.rottenTomatoes.url}
         available={ratings.rottenTomatoes.available}
