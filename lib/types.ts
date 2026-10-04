@@ -52,6 +52,12 @@ export interface CastMember {
   profileUrl: string | null;
 }
 
+export interface Director {
+  id: number;
+  name: string;
+  profileUrl?: string | null;
+}
+
 export interface MovieDetail {
   id: number;
   title: string;
@@ -59,6 +65,7 @@ export interface MovieDetail {
   runtime?: string | null;
   overview: string;
   genres?: string[];
+  directors?: Director[];
   cast?: CastMember[];
   posterUrl: string | null;
   backdropUrl: string | null;
@@ -66,4 +73,30 @@ export interface MovieDetail {
   ratings: MovieRatings;
   consensus: Consensus | null;
   watchProviders?: WatchProviders | null;
+}
+
+export interface PersonMovieCredit {
+  id: number;
+  title: string;
+  year: string;
+  releaseDate: string;
+  posterUrl: string | null;
+  backdropUrl: string | null;
+  overview?: string;
+  voteAverage?: number | null;
+  roles: string[]; // e.g. ["Director", "Producer"] or ["Cast: Verity Crawford"]
+  departments: string[]; // e.g. ["Directing", "Editing", "Sound", "Production", "Writing", "Acting"]
+}
+
+export interface PersonDetail {
+  id: number;
+  name: string;
+  biography?: string | null;
+  birthday?: string | null;
+  placeOfBirth?: string | null;
+  profileUrl: string | null;
+  knownForDepartment: string;
+  latestMovie: PersonMovieCredit | null;
+  latestMovieTrailerId: string | null;
+  movies: PersonMovieCredit[]; // in chronological order: latest first, oldest last
 }

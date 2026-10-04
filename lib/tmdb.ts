@@ -1,4 +1,4 @@
-import { MovieSummary, Consensus, WatchProviders, WatchProvider, CastMember } from "./types";
+import { MovieSummary, Consensus, WatchProviders, WatchProvider, CastMember, Director } from "./types";
 import { findYouTubeTrailer } from "./scrapers/youtube";
 
 const TMDB_BASE = "https://api.themoviedb.org/3";
@@ -20,6 +20,7 @@ export interface CuratedMovie {
   runtime?: string;
   overview: string;
   genres?: string[];
+  directors?: Director[];
   cast?: CastMember[];
   posterUrl: string;
   backdropUrl: string;
@@ -44,6 +45,9 @@ export const CURATED_MOVIES: CuratedMovie[] = [
     overview:
       "Lowen Ashleigh is hired by Jeremy Crawford to ghostwrite novels for his bestselling author wife Verity, who is unable to finish following an accident. Lowen gradually uncovers Verity's disturbing truths while residing at the Crawfords' home to work.",
     genres: ["Mystery", "Thriller"],
+    directors: [
+      { id: 22215, name: "Michael Showalter", profileUrl: `${IMG_BASE}/w185/AtX8Eli8Cg8g8HrcRJDBFnplyN0.jpg` },
+    ],
     posterUrl: `${IMG_BASE}/w780/dGSsPovyUW5XVekXcy7F2GyhTEh.jpg`,
     backdropUrl: `${IMG_BASE}/original/3BoHXmGAfC2qO4wnCpMYV0BzpHD.jpg`,
     trailerYouTubeId: "xdPMKhjMSFs",
@@ -91,6 +95,9 @@ export const CURATED_MOVIES: CuratedMovie[] = [
     id: 27205,
     title: "Inception",
     year: "2010",
+    directors: [
+      { id: 525, name: "Christopher Nolan", profileUrl: `${IMG_BASE}/w185/kuqJl01vOM7gP75m1P4dE5i70mS.jpg` },
+    ],
     overview:
       "Cobb, a skilled thief who steals corporate secrets through the use of dream-sharing technology, is given the inverse task of planting an idea into the mind of a C.E.O., but his tragic past may doom the project and his team to disaster.",
     posterUrl: `${IMG_BASE}/w780/oYuLEt3zVCKq57qu2F8dT7NIa6f.jpg`,
@@ -660,6 +667,7 @@ export async function getMovieMetadata(tmdbId: number) {
         runtime: curatedMatch.runtime ?? null,
         overview: curatedMatch.overview,
         genres: curatedMatch.genres ?? [],
+        directors: curatedMatch.directors ?? [],
         cast: curatedMatch.cast ?? [],
         posterUrl: curatedMatch.posterUrl,
         backdropUrl: curatedMatch.backdropUrl,
@@ -691,6 +699,7 @@ export async function getMovieMetadata(tmdbId: number) {
           runtime: curatedMatch.runtime ?? null,
           overview: curatedMatch.overview,
           genres: curatedMatch.genres ?? [],
+          directors: curatedMatch.directors ?? [],
           cast: curatedMatch.cast ?? [],
           posterUrl: curatedMatch.posterUrl,
           backdropUrl: curatedMatch.backdropUrl,
@@ -711,6 +720,7 @@ export async function getMovieMetadata(tmdbId: number) {
           runtime: curatedMatch.runtime ?? null,
           overview: curatedMatch.overview,
           genres: curatedMatch.genres ?? [],
+          directors: curatedMatch.directors ?? [],
           cast: curatedMatch.cast ?? [],
           posterUrl: curatedMatch.posterUrl,
           backdropUrl: curatedMatch.backdropUrl,
@@ -727,6 +737,7 @@ export async function getMovieMetadata(tmdbId: number) {
     const externalIds = externalIdsRes.ok ? await externalIdsRes.json() : {};
 
     let cast: CastMember[] = [];
+    let directors: Director[] = [];
     if (creditsRes && creditsRes.ok) {
       try {
         const credData = await creditsRes.json();
@@ -736,12 +747,27 @@ export async function getMovieMetadata(tmdbId: number) {
           character: c.character,
           profileUrl: c.profile_path ? `${IMG_BASE}/w185${c.profile_path}` : null,
         }));
+
+        directors = (credData.crew ?? [])
+          .filter(
+            (c: any) =>
+              c.job === "Director" ||
+              (c.department === "Directing" && c.job === "Co-Director")
+          )
+          .map((c: any) => ({
+            id: c.id,
+            name: c.name,
+            profileUrl: c.profile_path ? `${IMG_BASE}/w185${c.profile_path}` : null,
+          }));
       } catch (err) {
         console.warn("[tmdb] Failed to parse credits:", err);
       }
     }
     if (cast.length === 0 && curatedMatch?.cast) {
       cast = curatedMatch.cast;
+    }
+    if (directors.length === 0 && curatedMatch?.directors) {
+      directors = curatedMatch.directors;
     }
 
     const runtime = formatRuntime(detail.runtime) ?? curatedMatch?.runtime ?? null;
@@ -825,6 +851,7 @@ export async function getMovieMetadata(tmdbId: number) {
       runtime,
       overview: detail.overview,
       genres,
+      directors,
       cast,
       posterUrl: detail.poster_path ? `${IMG_BASE}/w780${detail.poster_path}` : null,
       backdropUrl: detail.backdrop_path ? `${IMG_BASE}/original${detail.backdrop_path}` : null,
@@ -842,6 +869,7 @@ export async function getMovieMetadata(tmdbId: number) {
         runtime: curatedMatch.runtime ?? null,
         overview: curatedMatch.overview,
         genres: curatedMatch.genres ?? [],
+        directors: curatedMatch.directors ?? [],
         cast: curatedMatch.cast ?? [],
         posterUrl: curatedMatch.posterUrl,
         backdropUrl: curatedMatch.backdropUrl,

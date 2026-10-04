@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { motion, type Variants } from "framer-motion";
 import { Clock } from "lucide-react";
 import { MovieDetail } from "@/lib/types";
@@ -69,6 +70,34 @@ export function MovieDetailAnimatedContent({ movie }: MovieDetailAnimatedContent
               )}
             </div>
           </div>
+
+          {/* Director name under the movie title */}
+          {movie.directors && movie.directors.length > 0 && (
+            <div className="flex items-center gap-1.5 text-xs text-ink-400">
+              <span className="text-ink-500 font-medium">Directed by</span>
+              <div className="flex items-center gap-2 flex-wrap">
+                {movie.directors.map((dir, idx) => (
+                  <span key={dir.id} className="inline-flex items-center">
+                    {idx > 0 && <span className="text-ink-600 mr-2">,</span>}
+                    <Link
+                      href={`/person/${dir.id}`}
+                      className="inline-flex items-center gap-1.5 font-medium text-ink-200 hover:text-accent group/dir underline-offset-4 hover:underline transition-colors"
+                    >
+                      {dir.profileUrl && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={dir.profileUrl}
+                          alt={dir.name}
+                          className="w-4 h-4 rounded-full object-cover border border-base-700 group-hover/dir:border-accent transition-colors"
+                        />
+                      )}
+                      <span>{dir.name}</span>
+                    </Link>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
 
           {movie.genres && movie.genres.length > 0 && (
             <div className="flex items-center gap-1.5 flex-wrap pt-0.5">

@@ -168,6 +168,7 @@ async function buildMovieDetail(tmdbId: number): Promise<MovieDetail> {
     runtime: meta.runtime ?? curated?.runtime ?? null,
     overview: meta.overview,
     genres: meta.genres ?? curated?.genres ?? [],
+    directors: (meta.directors && meta.directors.length > 0) ? meta.directors : (curated?.directors ?? []),
     cast: (meta.cast && meta.cast.length > 0) ? meta.cast : (curated?.cast ?? []),
     posterUrl: meta.posterUrl,
     backdropUrl: meta.backdropUrl,
