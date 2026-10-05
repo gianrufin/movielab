@@ -1,4 +1,14 @@
-import { MovieSummary, Consensus, WatchProviders, WatchProvider, CastMember, Director } from "./types";
+import {
+  MovieSummary,
+  Consensus,
+  WatchProviders,
+  WatchProvider,
+  CastMember,
+  Director,
+  SearchResultPayload,
+  SearchFilters,
+  SearchRefinements,
+} from "./types";
 import { findYouTubeTrailer } from "./scrapers/youtube";
 
 const TMDB_BASE = "https://api.themoviedb.org/3";
@@ -597,60 +607,324 @@ function getTmdbAuth(): {
   };
 }
 
-function searchCurated(query: string): MovieSummary[] {
-  const q = query.toLowerCase().trim();
-  return CURATED_MOVIES.filter(
-    (m) => m.title.toLowerCase().includes(q) || m.overview.toLowerCase().includes(q)
-  ).map((m) => ({
+function searchCurated(query: string, filters: SearchFilters = {}): SearchResultPayload {
+  let q = query.toLowerCase().trim();
+  let year = filters.year?.trim();
+  const director = filters.director?.toLowerCase().trim();
+  const cast = filters.cast?.toLowerCase().trim();
+  let detectedYear: string | undefined = undefined;
+  let detectedPerson: string | undefined = undefined;
+
+  // Detect 4-digit release year in text query
+  if (!year) {
+    const ym = q.match(/\b(19\d\d|20[0-3]\d)\b/);
+    if (ym) {
+      detectedYear = ym[1];
+      const withoutYear = q.replace(ym[0], "").replace(/\s+/g, " ").trim();
+      if (withoutYear.length >= 2) {
+        q = withoutYear;
+        year = detectedYear;
+      }
+    }
+  }
+
+  // Decompose person if multi-word query
+  if (q.includes(" ") && !director && !cast) {
+    const parts = q.split(" ");
+    for (let i = parts.length - 1; i >= 1; i--) {
+      const candidateTitle = parts.slice(0, i).join(" ");
+      const candidatePerson = parts.slice(i).join(" ");
+      const hasMatch = CURATED_MOVIES.some((m) =>
+        m.title.toLowerCase().includes(candidateTitle)
+      );
+      if (hasMatch) {
+        q = candidateTitle;
+        detectedPerson = candidatePerson;
+        break;
+      }
+    }
+  }
+
+  let matches = CURATED_MOVIES.filter(
+    (m) =>
+      m.title.toLowerCase().includes(q) ||
+      m.overview.toLowerCase().includes(q) ||
+      (m.directors && m.directors.some((d) => d.name.toLowerCase().includes(q))) ||
+      (m.cast && m.cast.some((c) => c.name.toLowerCase().includes(q)))
+  );
+
+  const allYears = new Set<string>();
+  const allDirectors = new Set<string>();
+  const allCast = new Set<string>();
+  const titleCounts = new Map<string, number>();
+
+  for (const m of matches) {
+    if (m.year) allYears.add(m.year);
+    if (m.directors) {
+      for (const d of m.directors) allDirectors.add(d.name);
+    }
+    if (m.cast) {
+      for (const c of m.cast.slice(0, 5)) allCast.add(c.name);
+    }
+    const tLower = m.title.toLowerCase();
+    titleCounts.set(tLower, (titleCounts.get(tLower) || 0) + 1);
+  }
+
+  if (year) {
+    matches = matches.filter((m) => m.year === year);
+  }
+  if (director) {
+    matches = matches.filter(
+      (m) => m.directors && m.directors.some((d) => d.name.toLowerCase().includes(director))
+    );
+  }
+  if (cast) {
+    matches = matches.filter(
+      (m) => m.cast && m.cast.some((c) => c.name.toLowerCase().includes(cast))
+    );
+  }
+  if (detectedPerson && !director && !cast) {
+    const pLower = detectedPerson.toLowerCase();
+    const pMatched = matches.filter(
+      (m) =>
+        (m.directors && m.directors.some((d) => d.name.toLowerCase().includes(pLower))) ||
+        (m.cast && m.cast.some((c) => c.name.toLowerCase().includes(pLower)))
+    );
+    if (pMatched.length > 0) {
+      matches = pMatched;
+    }
+  }
+
+  const results: MovieSummary[] = matches.map((m) => ({
     id: m.id,
     title: m.title,
     year: m.year,
     posterUrl: m.posterUrl,
+    director: m.directors?.[0]?.name ?? null,
+    directors: m.directors?.map((d) => d.name) ?? [],
+    leadCast: m.cast?.slice(0, 4).map((c) => c.name) ?? [],
   }));
+
+  const hasMultipleSameTitle =
+    Array.from(titleCounts.values()).some((cnt) => cnt > 1) || allYears.size > 1;
+
+  return {
+    results,
+    refinements: {
+      years: Array.from(allYears).sort((a, b) => b.localeCompare(a)),
+      directors: Array.from(allDirectors).slice(0, 6),
+      cast: Array.from(allCast).slice(0, 8),
+      hasMultipleSameTitle,
+    },
+    detectedFilters: {
+      year: detectedYear,
+      person: detectedPerson,
+    },
+  };
 }
 
-export async function searchMovies(query: string): Promise<MovieSummary[]> {
+export async function searchMovies(
+  query: string,
+  filters: SearchFilters = {}
+): Promise<SearchResultPayload> {
   const auth = getTmdbAuth();
 
   if (!auth) {
     console.info("[tmdb] TMDB credentials not configured. Serving matching results from curated catalog.");
-    return searchCurated(query);
+    return searchCurated(query, filters);
+  }
+
+  let q = query.trim();
+  let year = filters.year?.trim();
+  const director = filters.director?.trim();
+  const cast = filters.cast?.trim();
+  let detectedYear: string | undefined = undefined;
+  let detectedPerson: string | undefined = undefined;
+
+  // 1. Detect 4-digit release year in text query (e.g. "Dune 1984" or "Batman 2022")
+  if (!year) {
+    const ym = q.match(/\b(19\d\d|20[0-3]\d)\b/);
+    if (ym) {
+      detectedYear = ym[1];
+      const withoutYear = q.replace(ym[0], "").replace(/\s+/g, " ").trim();
+      if (withoutYear.length >= 2) {
+        q = withoutYear;
+        year = detectedYear;
+      }
+    }
   }
 
   try {
-    const url = auth.urlWithAuth(
-      `${TMDB_BASE}/search/movie?query=${encodeURIComponent(query)}&include_adult=false`
+    let url = auth.urlWithAuth(
+      `${TMDB_BASE}/search/movie?query=${encodeURIComponent(q)}&include_adult=false`
     );
+    if (year) {
+      url += `&primary_release_year=${encodeURIComponent(year)}`;
+    }
+
     const res = await fetch(url, { headers: auth.headers, next: { revalidate: 3600 } });
 
     if (res.status === 401 || res.status === 403) {
       console.warn("[tmdb] TMDB authorization failed (401/403). Falling back to curated catalog.");
-      return searchCurated(query);
+      return searchCurated(query, filters);
     }
 
     if (!res.ok) {
       console.warn(`[tmdb] TMDB search returned status ${res.status}. Falling back to curated catalog.`);
-      const curated = searchCurated(query);
-      if (curated.length > 0) return curated;
+      const curated = searchCurated(query, filters);
+      if (curated.results.length > 0) return curated;
       throw new Error(`TMDB search failed: ${res.status}`);
     }
 
     const data = await res.json();
-    const liveResults = (data.results ?? []).slice(0, 8).map((r: any) => ({
-      id: r.id,
-      title: r.title,
-      year: r.release_date ? r.release_date.slice(0, 4) : "—",
-      posterUrl: r.poster_path ? `${IMG_BASE}/w500${r.poster_path}` : null,
-    }));
+    let baseResults: any[] = data.results ?? [];
 
-    if (liveResults.length === 0) {
-      return searchCurated(query);
+    // 2. If 0 results or query has multiple words (e.g. "Dune Chalamet", "Batman Nolan", "Pinocchio del Toro"),
+    // attempt title + person decomposition
+    if ((baseResults.length === 0 || (!director && !cast)) && q.includes(" ")) {
+      const parts = q.split(" ");
+      for (let i = parts.length - 1; i >= 1; i--) {
+        const candidateTitle = parts.slice(0, i).join(" ");
+        const candidatePerson = parts.slice(i).join(" ");
+        let cUrl = auth.urlWithAuth(
+          `${TMDB_BASE}/search/movie?query=${encodeURIComponent(candidateTitle)}&include_adult=false`
+        );
+        if (year) cUrl += `&primary_release_year=${encodeURIComponent(year)}`;
+        const cRes = await fetch(cUrl, { headers: auth.headers, next: { revalidate: 3600 } }).catch(
+          () => null
+        );
+        if (cRes && cRes.ok) {
+          const cData = await cRes.json();
+          if (cData.results && cData.results.length > 0) {
+            baseResults = cData.results;
+            detectedPerson = candidatePerson;
+            break;
+          }
+        }
+      }
     }
 
-    return liveResults;
+    if (baseResults.length === 0) {
+      return searchCurated(query, filters);
+    }
+
+    // 3. Fetch credits for candidates to enrich and allow director/cast filtering
+    const candidateSlice = baseResults.slice(0, 10);
+    const enriched: MovieSummary[] = await Promise.all(
+      candidateSlice.map(async (m: any) => {
+        try {
+          const credRes = await fetch(auth.urlWithAuth(`${TMDB_BASE}/movie/${m.id}/credits`), {
+            headers: auth.headers,
+            next: { revalidate: 3600 },
+          }).catch(() => null);
+
+          let directors: string[] = [];
+          let leadCast: string[] = [];
+          if (credRes && credRes.ok) {
+            const credData = await credRes.json();
+            directors = (credData.crew ?? [])
+              .filter(
+                (c: any) =>
+                  c.job === "Director" ||
+                  (c.department === "Directing" && c.job === "Co-Director")
+              )
+              .map((c: any) => c.name);
+            leadCast = (credData.cast ?? []).slice(0, 5).map((c: any) => c.name);
+          }
+
+          return {
+            id: m.id,
+            title: m.title,
+            year: m.release_date ? m.release_date.slice(0, 4) : "—",
+            posterUrl: m.poster_path ? `${IMG_BASE}/w500${m.poster_path}` : null,
+            director: directors[0] || null,
+            directors,
+            leadCast,
+          };
+        } catch {
+          return {
+            id: m.id,
+            title: m.title,
+            year: m.release_date ? m.release_date.slice(0, 4) : "—",
+            posterUrl: m.poster_path ? `${IMG_BASE}/w500${m.poster_path}` : null,
+            director: null,
+            directors: [],
+            leadCast: [],
+          };
+        }
+      })
+    );
+
+    // 4. Collect refinement options from enriched results before filtering
+    const allYears = new Set<string>();
+    const allDirectors = new Set<string>();
+    const allCast = new Set<string>();
+    const titleCounts = new Map<string, number>();
+
+    for (const m of enriched) {
+      if (m.year && m.year !== "—") allYears.add(m.year);
+      if (m.directors) {
+        for (const d of m.directors) allDirectors.add(d);
+      }
+      if (m.leadCast) {
+        for (const c of m.leadCast) allCast.add(c);
+      }
+      const tLower = m.title.toLowerCase();
+      titleCounts.set(tLower, (titleCounts.get(tLower) || 0) + 1);
+    }
+
+    const hasMultipleSameTitle =
+      Array.from(titleCounts.values()).some((cnt) => cnt > 1) || allYears.size > 1;
+
+    // 5. Apply filters
+    let filtered = enriched;
+
+    if (year) {
+      filtered = filtered.filter((m) => m.year === year);
+    }
+
+    if (director) {
+      const dLower = director.toLowerCase();
+      filtered = filtered.filter(
+        (m) => m.directors && m.directors.some((d) => d.toLowerCase().includes(dLower))
+      );
+    }
+
+    if (cast) {
+      const cLower = cast.toLowerCase();
+      filtered = filtered.filter(
+        (m) => m.leadCast && m.leadCast.some((c) => c.toLowerCase().includes(cLower))
+      );
+    }
+
+    if (detectedPerson && !director && !cast) {
+      const pLower = detectedPerson.toLowerCase();
+      const personFiltered = filtered.filter(
+        (m) =>
+          (m.directors && m.directors.some((d) => d.toLowerCase().includes(pLower))) ||
+          (m.leadCast && m.leadCast.some((c) => c.toLowerCase().includes(pLower)))
+      );
+      if (personFiltered.length > 0) {
+        filtered = personFiltered;
+      }
+    }
+
+    return {
+      results: filtered.slice(0, 8),
+      refinements: {
+        years: Array.from(allYears).sort((a, b) => b.localeCompare(a)).slice(0, 6),
+        directors: Array.from(allDirectors).slice(0, 6),
+        cast: Array.from(allCast).slice(0, 8),
+        hasMultipleSameTitle,
+      },
+      detectedFilters: {
+        year: detectedYear,
+        person: detectedPerson,
+      },
+    };
   } catch (err: any) {
     console.warn("[tmdb] searchMovies error caught, falling back to curated:", err.message || err);
-    return searchCurated(query);
+    return searchCurated(query, filters);
   }
 }
 

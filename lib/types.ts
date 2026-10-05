@@ -3,6 +3,31 @@ export interface MovieSummary {
   title: string;
   year: string;
   posterUrl: string | null;
+  director?: string | null;
+  directors?: string[];
+  leadCast?: string[];
+}
+
+export interface SearchRefinements {
+  years: string[];
+  directors: string[];
+  cast: string[];
+  hasMultipleSameTitle: boolean;
+}
+
+export interface SearchFilters {
+  year?: string;
+  director?: string;
+  cast?: string;
+}
+
+export interface SearchResultPayload {
+  results: MovieSummary[];
+  refinements: SearchRefinements;
+  detectedFilters?: {
+    year?: string;
+    person?: string;
+  };
 }
 
 export interface RatingSource {
